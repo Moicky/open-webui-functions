@@ -1,7 +1,7 @@
 """
-title: Usage Costs reporting bot
-author: Dmitriy Alergant
-author_url: https://github.com/DmitriyAlergant-t1a/open-webui-cost-tracking-manifolds
+title: OpenRouter Usage Bot
+author: Moicky
+author_url: https://github.com/Moicky/open-webui-functions
 version: 0.1.0
 required_open_webui_version: 0.3.17
 license: MIT
