@@ -162,7 +162,7 @@ class Pipe:
 
         query = f"""
             SELECT 
-                u.email as user_email,
+                u.name as user_name,
                 uc.user_id,
                 uc.model,
                 {date_function} as date,
@@ -207,7 +207,7 @@ class Pipe:
                 summary = [
                     {
                         "user_id": row.user_id,
-                        "user_email": row.user_email,
+                        "user_name": row.user_name,
                         "model": row.model,
                         "date": row.date,
                         "total_cost": float(row.total_cost),
@@ -293,7 +293,7 @@ class Pipe:
         agg_dict["total_input_tokens"] = "sum"
         agg_dict["total_output_tokens"] = "sum"
         agg_dict["messages_count"] = "sum"
-        agg_dict["user_email"] = "first"
+        agg_dict["user_name"] = "first"
 
         user_totals = df.groupby("user_id").agg(agg_dict).round(2)
         top_users = user_totals.nlargest(20, "total_cost")
@@ -302,7 +302,7 @@ class Pipe:
 
         rows = []
         for _, row in top_users.iterrows():
-            row_data = [row["user_email"]]
+            row_data = [row["user_name"]]
             row_data.extend(
                 [
                     f"${row['total_cost']:,.2f}" if row["total_cost"] > 0 else "",
@@ -335,7 +335,7 @@ class Pipe:
 
         return report
 
-    def generate_single_user_report(self, days: int, user_id: str, user_email: str):
+    def generate_single_user_report(self, days: int, user_id: str, user_name: str):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
 
@@ -354,7 +354,7 @@ class Pipe:
 
         # Prepare the report
         report = [
-            f"## Usage Report for {user_email}",
+            f"## Usage Report for {user_name}",
             f"### Period: {start_date.date()} to {end_date.date()}",
             "",
             "#### Usage Costs:",
