@@ -250,16 +250,20 @@ class Pipe:
         report += f"- Input tokens:  **{total_input_tokens:,}**\n"
         report += f"- Output tokens: **{total_output_tokens:,}**\n"
 
-        # Top 5 models by cost
-        report += "\n#### Top 10 Models by Cost:\n"
+        report += "\n#### Top Models by Cost:\n"
 
         # Group by model and currency, then sum costs
-        model_costs = df.groupby(["model"])[["total_cost"]].sum().reset_index()
-        top_models = model_costs.nlargest(10, "total_cost")
+        model_costs = (
+            df.groupby(["model"])[["total_cost"]]
+            .sum()
+            .reset_index()
+            .sort_values(by="total_cost", ascending=False)
+            .query("total_cost > 0.005")
+        )
 
         headers = ["Model", "Cost ($)"]
         rows = []
-        for _, row in top_models.iterrows():
+        for _, row in model_costs.iterrows():
             model_name = row["model"]
             cost = row["total_cost"]
             rows.append([model_name, f"${cost:,.2f}" if cost > 0 else ""])
@@ -288,15 +292,16 @@ class Pipe:
         report += "\n#### Top 20 Users by Cost:\n"
 
         # Get user totals and select top 20 users
-        agg_dict = {}
-        agg_dict["total_cost"] = "sum"
-        agg_dict["total_input_tokens"] = "sum"
-        agg_dict["total_output_tokens"] = "sum"
-        agg_dict["messages_count"] = "sum"
-        agg_dict["user_name"] = "first"
+        agg_dict = {
+            "total_cost": "sum",
+            "total_input_tokens": "sum",
+            "total_output_tokens": "sum",
+            "messages_count": "sum",
+            "user_name": "first",
+        }
 
         user_totals = df.groupby("user_id").agg(agg_dict).round(2)
-        top_users = user_totals.nlargest(20, "total_cost")
+        top_users = user_totals.sort_values(by="total_cost", ascending=False)
 
         headers = ["User", "Cost ($)", "Input Tokens", "Output Tokens", "Messages"]
 
@@ -377,29 +382,26 @@ class Pipe:
         )
 
         # TOP 5 MODELS BY COST
-        report.append("#### Top 5 Models by Cost:")
+        report.append("#### Top Models by Cost:")
         report.append("")
 
-        # Group data and select top 5 models by USD cost (currency-converted)
-        model_costs = df.groupby(["model"])[["total_cost"]].sum().reset_index()
-
-        top_models = model_costs.groupby("model")["total_cost"].sum().nlargest(5).index
-
-        top_model_data = model_costs[model_costs["model"].isin(top_models)]
+        model_costs = (
+            df.groupby(["model"])[["total_cost"]]
+            .sum()
+            .reset_index()
+            .sort_values(by="total_cost", ascending=False)
+            .query("total_cost > 0.005")
+        )
 
         # Prepare data for table rendering
         headers = ["Model", "$ (Cost)"]
 
         rows = []
-        for model in top_models:
-            row_data = [model]
-            model_data = top_model_data[(top_model_data["model"] == model)]
-            if len(model_data) > 0:
-                cost = model_data["total_cost"].sum()
-
-                row_data.append(f"${cost:,.2f}" if cost > 0 else "")
-            else:
-                row_data.append("")
+        for _, row in model_costs.iterrows():
+            row_data = [row["model"]]
+            row_data.append(
+                f"${row['total_cost']:,.2f}" if row["total_cost"] > 0 else ""
+            )
             rows.append(row_data)
 
         # Render an ASCII table
