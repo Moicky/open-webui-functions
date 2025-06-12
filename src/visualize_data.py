@@ -11,6 +11,7 @@ license: MIT
 from typing import Optional, Any, Callable, Awaitable
 from open_webui.utils.misc import get_last_assistant_message_item
 from pydantic import BaseModel, Field
+import traceback
 import requests
 import logging
 import json
@@ -222,8 +223,9 @@ class Action:
             html_content = result["choices"][0]["message"]["content"]
 
             if usage_persistence_manager:
+                user = __user__[0] if type(__user__) == tuple else __user__
                 await usage_persistence_manager.log_usage_fact(
-                    user_id=__user__["id"],
+                    user_id=user["id"],
                     model=self.valves.MODEL,
                     metadata=json.dumps(
                         {
@@ -250,6 +252,7 @@ class Action:
         except Exception as e:
             error_message = f"Error visualizing JSON: {str(e)}"
             self.logger.error(f"Error: {error_message}")
+            self.logger.error(traceback.format_exc())
             message["content"] += f"\n\nError: {error_message}"
 
             await self.emit(__event_emitter__, "Error Visualizing JSON", True)
